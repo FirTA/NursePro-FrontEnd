@@ -15,7 +15,7 @@ import {
     DrawerHeader,
     Drawer as StyledDrawer,
   } from "../../style/sidebarStyles";
-import { APIRequestWithHeaders } from "../../api/post";
+import { API } from "../../api/post";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "@mui/system";
 import { useNavigate } from "react-router-dom";
@@ -47,12 +47,11 @@ export default function Header() {
     const data = {
       refresh_token: refresh_token,
     };
-    const Response = await APIRequestWithHeaders.post("/logout/", data);
+    const Response = await API.post("/logout/", data);
     localStorage.clear();
     navigate("/login");
   };
 
-  console.log("Component rendered"); // Add this line
   useEffect(() => {
     const role = localStorage.getItem("role");
     if (role) {

@@ -39,7 +39,8 @@ const CRUDDataGrid = ({
     setLoading(true);
     try {
       const response = await customEndpoints.fetch();
-      setRows(response.data);
+      console.log(response.data.data)
+      setRows(response.data.data);
       showSnackbar('Data loaded successfully', 'success');
     } catch (error) {
       onError(error);
@@ -51,6 +52,7 @@ const CRUDDataGrid = ({
 
   useEffect(() => {
     fetchData();
+    console.log(rows)
   }, []);
 
   const handleInputChange = (e) => {
@@ -191,7 +193,7 @@ const CRUDDataGrid = ({
         rows={rows}
         columns={columnsWithActions}
         loading={loading}
-        sortModel={defaultSort}
+        sortingOrder={['asc', 'desc']}
         components={{
           Toolbar: GridToolbar,
         }}

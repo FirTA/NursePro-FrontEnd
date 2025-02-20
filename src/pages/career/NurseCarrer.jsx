@@ -1,105 +1,77 @@
 // App.jsx
-import React from 'react';
-import { Box, createTheme, ThemeProvider } from '@mui/material';
-import { DummyDataService } from '../../data/DummyDataService';
-import CRUDDataGrid from '../components/CRUDDataGrid';
+import React from "react";
+import { Box, createTheme, ThemeProvider } from "@mui/material";
+import { DummyDataService } from "../../data/DummyDataService";
+import CRUDDataGrid from "../components/CRUDDataGrid";
+import Header from "../layout/Header";
+import { API } from "../../api/post";
+import { blue, blueGrey } from "@mui/material/colors";
 
 const theme = createTheme();
 
 const NurseCareer = () => {
+  const url = "/levels/";
   const columns = [
-    { 
-      field: 'id', 
-      headerName: 'ID', 
-      width: 90 
+    {
+      field: "id",
+      headerName: "ID",
+      width: 50,
     },
-    { 
-      field: 'name', 
-      headerName: 'Name', 
-      width: 150, 
-      editable: true 
+    {
+      field: "level",
+      headerName: "level",
+      width: 100,
     },
-    { 
-      field: 'email', 
-      headerName: 'Email', 
-      width: 200, 
-      editable: true 
+    {
+      field: "next_level",
+      headerName: "next level",
+      width: 150,
     },
-    { 
-      field: 'role', 
-      headerName: 'Role', 
-      width: 130, 
-      editable: true 
-    },
-    { 
-      field: 'status', 
-      headerName: 'Status', 
-      width: 130, 
-      editable: true 
+    {
+      field: "required_time_in_month",
+      headerName: "required time in month",
+      width: 200,
     },
   ];
-
-  // Custom validation function
-  // const validateRow = (data) => {
-  //   const errors = {};
-    
-  //   if (!data.name?.trim()) {
-  //     errors.name = 'Name is required';
-  //   }
-    
-  //   if (!data.email?.trim()) {
-  //     errors.email = 'Email is required';
-  //   } else if (!/\S+@\S+\.\S+/.test(data.email)) {
-  //     errors.email = 'Invalid email format';
-  //   }
-    
-  //   if (!data.role?.trim()) {
-  //     errors.role = 'Role is required';
-  //   }
-    
-  //   if (!data.status?.trim()) {
-  //     errors.status = 'Status is required';
-  //   }
-
-  //   return {
-  //     isValid: Object.keys(errors).length === 0,
-  //     errors
-  //   };
-  // };
 
   // Instead of actual API calls, we'll use our dummy service
   const customEndpoints = {
     fetch: async () => {
-      const data = await DummyDataService.fetchData();
+      const data = await API.get(url);
       return { data };
     },
     create: async (data) => {
-      const result = await DummyDataService.createData(data);
+      const result = await API.post(url, data);
       return { data: result };
     },
     update: async (id, data) => {
-      const result = await DummyDataService.updateData(id, data);
+      const result = await API.patch(`${url}${id}/`, data);
       return { data: result };
     },
     delete: async (id) => {
-      await DummyDataService.deleteData(id);
+      await API.delete(`${url}${id}/`);
       return { success: true };
     },
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ height: '100vh', p: 3 }}>
-        <CRUDDataGrid
-          title="User Management System"
-          columns={columns}
-          customEndpoints={customEndpoints}
-          defaultSort={[{ field: 'name', sort: 'asc' }]}
-          onError={(error) => console.error('Error:', error)}
-          onSuccess={(operation) => console.log(`${operation} completed successfully`)}
-        />
+    <Box>
+      <Header />
+      <Box bgcolor={blue} sx={{ p: 5 }}>
+        <Box sx={{ height: "100vh", p: 3 }}>
+          <CRUDDataGrid
+            title="Referensi Jenjang Karir"
+            columns={columns}
+            customEndpoints={customEndpoints}
+            defaultSort={[{ field: "name", sort: "asc" }]}
+            onError={(error) => console.error("Error:", error)}
+            onSuccess={(operation) =>
+              console.log(`${operation} completed successfully`)
+            }
+          />
+        </Box>
       </Box>
-    </ThemeProvider>
+    </Box>
   );
 };
 

@@ -63,11 +63,11 @@ export const Menus = [
                 submenu: [
                     {
                         title: "Material Library",
-                        urlpath: "/materials"
+                        urlpath: "/material"
                     },
                     {
                         title: "Assign Materials",
-                        urlpath: "/"
+                        urlpath: "/testcomponent"
                     }
                 ]
             }

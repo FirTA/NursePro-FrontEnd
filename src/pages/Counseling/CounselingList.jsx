@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import CustomTable from "../components/CustomTable";
 import { Box, Typography } from "@mui/material";
-import { APIRequestWithHeaders } from "../../api/post";
+import { API } from "../../api/post";
 import Header from "../layout/Header";
 import { DataGrid } from "@mui/x-data-grid";
 // import { ColumnDirective, ColumnsDirective, GridComponent } from '@syncfusion/ej2-react-grids';
@@ -33,7 +33,7 @@ const CounselingList = () => {
   }));
 
   const onHandleCounselingData = async () => {
-    const Response = await APIRequestWithHeaders.get("/consultations/");
+    const Response = await API.get("/consultations/");
     const JSONData = Response.data;
     console.log(JSONData);
     setData(JSONData);
