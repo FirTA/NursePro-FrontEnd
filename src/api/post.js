@@ -41,7 +41,7 @@ API.interceptors.response.use(
         const response = await APIWithoutHeader.post("/refresh-token/", {
           refresh : refreshToken,
         });
-        const { access, refresh } = response.data;
+        const { access } = response.data;
 
         localStorage.setItem("access_token", access);
         originalRequest.headers.Authorization = `Bearer ${access}`;

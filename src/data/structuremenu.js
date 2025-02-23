@@ -27,7 +27,7 @@ export const Menus = [
                     },
                     {
                         title: "Material Preparation",
-                        urlpath: "/materials"
+                        urlpath: "/material"
                     },
                     {
                         title: "Session History",
@@ -45,7 +45,7 @@ export const Menus = [
                 submenu: [
                     {
                         title: "Nurse List",
-                        urlpath: "/nurse-career"
+                        urlpath: "/nurse-list"
                     },
                     {
                         title: "Level Approval",
@@ -57,20 +57,6 @@ export const Menus = [
                     }
                 ]
             },
-            {
-                title: "Materials",
-                icon: <FileText className="w-5 h-5" />,
-                submenu: [
-                    {
-                        title: "Material Library",
-                        urlpath: "/material"
-                    },
-                    {
-                        title: "Assign Materials",
-                        urlpath: "/testcomponent"
-                    }
-                ]
-            }
         ]
     },
     {

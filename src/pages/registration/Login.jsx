@@ -1,232 +1,227 @@
-import React, { useState } from 'react';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Link from '@mui/material/Link';
-import Paper from '@mui/material/Paper';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Typography from '@mui/material/Typography';
-import { makeStyles } from '@mui/styles';
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Link,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Paper,
+  Alert,
+  Snackbar,
+  Divider,
+  CircularProgress,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import {
+  Visibility,
+  VisibilityOff,
+  Google as GoogleIcon,
+  GitHub as GitHubIcon,
+} from "@mui/icons-material";
+import { API } from "../../api/post";
 
-import { users } from '../../data/data'
-import {API} from '../../api/post';
-import axios from 'axios';
+// Custom styled components
+const LoginContainer = styled(Box)(({ theme }) => ({
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  background: `linear-gradient(45deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+  padding: theme.spacing(2),
+}));
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    height: '100vh',
-  },
-  image: {
-    // backgroundImage: 'url(https://source.unsplash.com/random)',
-    backgroundRepeat: 'no-repeat',
-    backgroundColor:
-      theme.palette.type === 'light' ? theme.palette.grey[50] : theme.palette.grey[900],
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-  },
-  paper: {
-    margin: theme.spacing(8, 4),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: '100%',
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
+const LoginCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  width: "100%",
+  maxWidth: 450,
+  margin: "auto",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  borderRadius: theme.spacing(2),
+  boxShadow: "0 8px 40px rgba(0, 0, 0, 0.12)",
+}));
+
+const StyledForm = styled("form")(({ theme }) => ({
+  width: "100%",
+  marginTop: theme.spacing(2),
+  "& .MuiTextField-root": {
+    marginBottom: theme.spacing(2),
   },
 }));
 
-export default function LoginPage() {
-  const classes = useStyles();
+const SocialButton = styled(Button)(({ theme }) => ({
+  marginBottom: theme.spacing(1),
+  padding: theme.spacing(1.5),
+  borderRadius: theme.spacing(1),
+  width: "100%",
+  justifyContent: "flex-start",
+  "& .MuiSvgIcon-root": {
+    marginRight: theme.spacing(1),
+  },
+}));
+
+const LoginPage = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
 
-  const [user, setUser ] =useState({email : "", username : ""}) 
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [response, setResponse] = useState();
-  const [responseMsg, setResponseMsg] = useState();
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-
-  const handleSignIn = (event) => {
-    event.preventDefault(); // Prevents the form from refreshing the page
-    navigate('/dashboard'); // Navigates to the dashboard route
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();  // Make sure this is here
     try {
-        await authenticateUser();
-    } catch (error) {
-        console.error('Submit error:', error);
-    }
-};
-
-
-  // using api
-  const authenticateUser = async () => {
-    // Create an abort controller for timeout handling
-    const controller = new AbortController();
-    
-    try {
-        const data = {
-            username: username,
-            password: password,
-        };
-
-        console.log('Attempting login with data:', data);
-        
-        const response = await API.post('login/', data, {
-            signal: controller.signal,
-            // Add validateStatus to see all responses
-            validateStatus: function (status) {
-                return status >= 200 && status < 500;
-            }
-        });
-
-        if (response.status === 200) {
-            console.log('Login successful:', response.data);
-            localStorage.setItem("user_id", response.data.user_id);
-            localStorage.setItem("username", response.data.username);
-            localStorage.setItem("role", response.data.role);
-            localStorage.setItem("access_token", response.data.access_token);
-            localStorage.setItem("refresh_token", response.data.refresh_token);
-            navigate('/dashboard');
-        } else {
-            console.error('Server responded with:', response.status, response.data);
-        }
-        
-    } catch (error) {
-        if (axios.isAxiosError(error)) {
-            console.error('Axios Error Details:');
-            console.error('Message:', error.message);
-            console.error('Response:', error.response?.data);
-            console.error('Status:', error.response?.status);
-            console.error('Headers:', error.response?.headers);
-            console.error('Request Config:', error.config);
-        } else {
-            console.error('Non-Axios Error:', error);
-        }
-    } finally {
-        controller.abort(); // Clean up
-    }
-  };
-  const test = () =>{
-  axios.get('http://127.0.0.1:8000/api/nurses/')
-    .then(res => {
-      let data = res.data;
-      // console.log(data)
-      this.setState({
-        details: data
+      const response = await API.post("login/", {
+        username: formData.username,
+        password: formData.password,
       });
-    })
-    .catch(err => { })
-  }
-  // using local data
-// const authenticateUser = (email, password) =>{
-//   const user = users.find((user) => user.email === email);
-//   if (!user){
-//     console.log("User not found")
-//     return { success: false, message : "User not found"}
-//   }
-//   if (password === "password123") { // For simplicity, all users have the same password
-//     return { success: true, user };
-//   }
 
-
-
-//   console.log("incorrect password")
-//   return { success: false, message: "Invalid credentials" };
-// }
+      if (response.status === 200) {
+        const { access_token, refresh_token, user_id, role } = response.data;
+        localStorage.setItem("access_token", access_token);
+        localStorage.setItem("refresh_token", refresh_token);
+        localStorage.setItem("user_id", user_id);
+        localStorage.setItem("role", role);
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.detail || "Login failed. Please try again.";
+      setError(errorMessage);
+      setIsSnackbarOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <Grid container component="main" className={classes.root}>
-      <CssBaseline />
-      <Grid item xs={false} sm={4} md={7} className={classes.image} />
-      <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
-        <Box className={classes.paper}>
-          <Avatar className={classes.avatar}>
-            <LockOutlinedIcon />
-          </Avatar>
-          <Typography component="h1" variant="h5">
-            Sign in
+    <LoginContainer>
+      <Container component="main" maxWidth="sm">
+        <LoginCard elevation={3}>
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{
+              mb: 3,
+              fontWeight: 700,
+              color: "primary.main",
+            }}
+          >
+            Welcome Back
           </Typography>
-          <Button onClick={()=>test()}>
-            test
-          </Button>
-          <form className={classes.form} onSubmit={(e)=>handleSubmit(e)} >
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+            Please sign in to your account
+          </Typography>
+
+          <StyledForm onSubmit={handleLogin}>
             <TextField
               variant="outlined"
-              margin="normal"
               required
               fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              onChange={(e) => {
-                  setUsername(e.target.value)
-                  console.log(username)
-                }
-              }
-              value={username}
+              label="username"
+              name="username"
               autoFocus
+              value={formData.username}
+              onChange={(e) =>
+                setFormData({ ...formData, username: e.target.value })
+              }
             />
+
             <TextField
               variant="outlined"
-              margin="normal"
               required
               fullWidth
               name="password"
               label="Password"
-              type="password"
-              id="password"
+              type={showPassword ? "text" : "password"}
               autoComplete="current-password"
-              onChange={(e) => setPassword(e.target.value)}
-              value={password}
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-            />
-            <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
-              label="Remember me"
-            />
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              color="primary"
-              className={classes.submit}
+              size="large"
+              disabled={isLoading}
+              sx={{
+                mt: 3,
+                mb: 2,
+                py: 1.5,
+                position: "relative",
+              }}
             >
-              Sign In
+              {isLoading ? (
+                <CircularProgress size={24} sx={{ position: "absolute" }} />
+              ) : (
+                "Sign In"
+              )}
             </Button>
-            <Grid container>
-              <Grid item xs>
-                <Link href="#" variant="body2">
+
+            {/* <Grid container justifyContent="flex-end">
+              <Grid item>
+                <Link href="/forgot-password" variant="body2" color="primary">
                   Forgot password?
                 </Link>
               </Grid>
-              <Grid item>
-                <Link href="#" variant="body2">
-                  {"Don't have an account? Sign Up"}
+            </Grid> */}
+
+            {/* <Box sx={{ mt: 3, textAlign: "center" }}>
+              <Typography variant="body2" color="text.secondary">
+                Don't have an account?{" "}
+                <Link href="/signup" color="primary" fontWeight="medium">
+                  Sign up
                 </Link>
-              </Grid>
-            </Grid>
-            <Box mt={5}></Box>
-          </form>
-        </Box>
-      </Grid>
-    </Grid>
+              </Typography>
+            </Box> */}
+          </StyledForm>
+        </LoginCard>
+      </Container>
+
+      <Snackbar
+        open={isSnackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setIsSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setIsSnackbarOpen(false)}
+          severity="error"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {error}
+        </Alert>
+      </Snackbar>
+    </LoginContainer>
   );
-}
+};
+
+export default LoginPage;

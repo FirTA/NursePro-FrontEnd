@@ -75,7 +75,6 @@ const CareerPath = () => {
   ];
   return (
     <Box>
-        <Header/>
       <DataGrid columns={columns} rows={dummydata} checkboxSelection/>
     </Box>
   );

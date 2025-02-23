@@ -1,84 +1,309 @@
-import React, { useEffect, useState } from "react";
-import CustomTable from "../components/CustomTable";
-import { Box, Typography } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Button,
+  Chip,
+  Typography,
+  Box,
+  CircularProgress,
+  TextField,
+  TableSortLabel,
+  Tooltip,
+  Popover,
+} from "@mui/material";
+import { Delete, Edit, Visibility, Search } from "@mui/icons-material";
+import { formatInTimeZone } from "date-fns-tz";
 import { API } from "../../api/post";
-import Header from "../layout/Header";
-import { DataGrid } from "@mui/x-data-grid";
-// import { ColumnDirective, ColumnsDirective, GridComponent } from '@syncfusion/ej2-react-grids';
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+// Extend dayjs with plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.locale("id");
 
-const CounselingList = () => {
-  const [data, setData] = useState([]);
-  // const [columns, setColumns] = useState([])
-  // Define Table Columns with Sorting
-  const columns = [
-    { field: "ID", headername: "id" },
-    { field: "title", headername: "name" },
-    { field: "description", headername: "email" },
-    { field: "management", headername: "phone" },
-    { field: "nurse_id", headername: "phone" },
-    { field: "scheduled_date", headername: "phone" },
-    { field: "consultation_type", headername: "phone" },
-    { field: "status", headername: "phone" },
-  ];
-
-  const rows = data.map((row) => ({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    management: row.management,
-    nurse_id: row.nurse_id,
-    scheduled_date: row.scheduled_date,
-    consultation_type: row.consultation_type,
-    status: row.status,
-  }));
-
-  const onHandleCounselingData = async () => {
-    const Response = await API.get("/consultations/");
-    const JSONData = Response.data;
-    console.log(JSONData);
-    setData(JSONData);
-    const columnsJSON = Object.keys(JSONData[0]);
-    const dataJSON = Object.values(JSONData);
-    console.log(" this colums ", columnsJSON);
-    console.log(" this data ", dataJSON);
-
-    // setColumns(columnsJSON)
-  };
+const CounselingList = ({ onEdit, onView, refreshTrigger }) => {
+  const [counseling, setCounseling] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [orderBy, setOrderBy] = useState("title");
+  const [order, setOrder] = useState("asc");
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [hoveredData, setHoveredData] = useState(null);
 
   useEffect(() => {
-    console.log(data);
-  }, [data]);
-
-  useEffect(() => {
-    onHandleCounselingData();
+    fetchConsultations();
   }, []);
 
-  // Action Handlers
-  const handleView = (row) => {
-    alert(`Viewing: ${row.name}`);
-  };
+  useEffect(() => {
+    fetchConsultations();
+  }, [refreshTrigger]);
 
-  const handleEdit = (row) => {
-    alert(`Editing: ${row.name}`);
-  };
-
-  const handleDelete = (row) => {
-    if (window.confirm(`Are you sure you want to delete ${row.name}?`)) {
-      setData((prevData) => prevData.filter((item) => item.id !== row.id));
+  const fetchConsultations = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await API.get("/counseling/");
+      setCounseling(response.data || []);
+    } catch (error) {
+      console.error("Error fetching consultations:", error);
+      setError("Failed to load consultations");
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <Box>
-      <Header />
+  const handleDelete = async (consultation) => {
+    if (window.confirm("Are you sure you want to delete this consultation?")) {
+      try {
+        await API.delete(`/counseling/${consultation.id}/`);
+        await fetchConsultations();
+      } catch (error) {
+        console.error("Error deleting consultation:", error);
+      }
+    }
+  };
 
-      <Box display="block">
-        {/* Table Component */}
-        <Box>
-          <DataGrid columns={columns} rows={rows} />
+  // Sorting functions
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
+
+  const sortData = (data) => {
+    return data.sort((a, b) => {
+      let valueA = a[orderBy];
+      let valueB = b[orderBy];
+
+      // Handle nested properties
+      if (orderBy === "management") {
+        valueA = a.management.name;
+        valueB = b.management.name;
+      }
+
+      if (order === "desc") {
+        [valueA, valueB] = [valueB, valueA];
+      }
+
+      return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+    });
+  };
+
+  const formatScheduledDate = (dateString) => {
+    if (!dateString) {
+      return <span>Not scheduled</span>;
+    }
+
+    try {
+      // Convert UTC to WIB (UTC+7)
+      const date = dayjs(dateString).tz("Asia/Jakarta");
+      const formattedDate = date.format("DD MMMM YYYY HH:mm");
+
+      return <span>{formattedDate} WIB</span>;
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return <span>{dateString}</span>;
+    }
+  };
+
+  // Search function
+  const filterData = (data) => {
+    return data.filter((item) =>
+      Object.values(item).some((value) =>
+        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  };
+
+  // Hover functions
+  const handlePopoverOpen = (event, data) => {
+    setAnchorEl(event.currentTarget);
+    setHoveredData(data);
+    console.log("open nurse");
+  };
+
+  const handlePopoverClose = () => {
+    setTimeout(() => {
+      setAnchorEl(null);
+      setHoveredData(null);
+    }, 200); // Delay 200ms
+  };
+  const renderSortableHeader = (id, label) => (
+    <TableCell>
+      <TableSortLabel
+        active={orderBy === id}
+        direction={orderBy === id ? order : "asc"}
+        onClick={() => handleRequestSort(id)}
+      >
+        {label}
+      </TableSortLabel>
+    </TableCell>
+  );
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+            <CircularProgress />
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (error) {
+      return (
+        <TableRow>
+          <TableCell
+            colSpan={7}
+            align="center"
+            sx={{ py: 3, color: "error.main" }}
+          >
+            {error}
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    const filteredData = filterData(counseling);
+    const sortedData = sortData(filteredData);
+
+    if (sortedData.length === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+            No consultations found
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return sortedData.map((counseling) => (
+      <TableRow key={counseling.id}>
+        <TableCell>{counseling.title}</TableCell>
+        <TableCell>
+          {counseling.management.name} - {counseling.management.position}
+        </TableCell>
+        <TableCell>{counseling.counseling_type_display}</TableCell>
+        <TableCell>
+          <Chip
+            label={counseling.status_display}
+            color={counseling.status === 1 ? "primary" : "default"}
+          />
+        </TableCell>
+        <TableCell>{formatScheduledDate(counseling.scheduled_date)}</TableCell>
+        <TableCell>
+          {counseling.nurses?.map((nurse) => (
+            <Chip
+              key={nurse.id}
+              label={nurse.name}
+              size="small"
+              variant="outlined"
+              sx={{ mr: 0.5, mb: 0.5 }}
+            />
+          ))}
+        </TableCell>
+        <TableCell>
+          <IconButton onClick={() => onView(counseling)}>
+            <Visibility />
+          </IconButton>
+          <IconButton onClick={() => onEdit(counseling)}>
+            <Edit />
+          </IconButton>
+          <IconButton color="error" onClick={() => handleDelete(counseling)}>
+            <Delete />
+          </IconButton>
+        </TableCell>
+      </TableRow>
+    ));
+  };
+
+  return (
+    <Paper sx={{ width: "100%", overflow: "hidden" }}>
+      <Box
+        p={2}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <Typography variant="h6">Consultations</Typography>
+        <Box display="flex" gap={2}>
+          <TextField
+            size="small"
+            placeholder="Search consultations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ color: "action.active", mr: 1 }} />,
+            }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => onEdit()}
+            disabled={loading}
+          >
+            Add New Consultation
+          </Button>
         </Box>
       </Box>
-    </Box>
+      <TableContainer sx={{ maxHeight: 440 }}>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              {renderSortableHeader("title", "Title")}
+              {renderSortableHeader("management", "Management")}
+              {renderSortableHeader("counseling_type_display", "Type")}
+              {renderSortableHeader("status_display", "Status")}
+              {renderSortableHeader("scheduled_date", "Scheduled Date")}
+              <TableCell>Nurses</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>{renderContent()}</TableBody>
+        </Table>
+      </TableContainer>
+
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handlePopoverClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+      >
+        <Box sx={{ p: 2, maxWidth: 300 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            All Nurses
+          </Typography>
+          {hoveredData?.map((nurse) => (
+            <Chip
+              key={nurse.id}
+              label={nurse.name}
+              size="small"
+              variant="outlined"
+              sx={{ mr: 0.5, mb: 0.5 }}
+            />
+          ))}
+        </Box>
+      </Popover>
+    </Paper>
   );
 };
 

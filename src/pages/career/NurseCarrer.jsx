@@ -56,7 +56,6 @@ const NurseCareer = () => {
 
   return (
     <Box>
-      <Header />
       <Box bgcolor={blue} sx={{ p: 5 }}>
         <Box sx={{ height: "100vh", p: 3 }}>
           <CRUDDataGrid

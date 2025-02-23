@@ -96,44 +96,7 @@ const Material = () => {
 
   const url = "/counselingmaterial/";
 
-  const columns = [
-    {
-      field: "id",
-      headerName: "ID",
-      width: 50,
-    },
-    {
-      field: "counseling_title",
-      headerName: "counseling",
-      width: 100,
-    },
-    {
-      field: "title",
-      headerName: "Judul",
-      width: 100,
-    },
-    {
-      field: "description",
-      headerName: "Keterangan",
-      width: 100,
-    },
-    {
-      field: "file_path",
-      headerName: "File",
-      width: 100,
-      renderCell: (params) => (
-        <Box>
-          <IconButton size="small">
-            <EditIcon
-              onClick={() => {
-                handleDocuments(params.value);
-              }}
-            />
-          </IconButton>
-        </Box>
-      ),
-    },
-  ];
+
 
   const handleDocuments = (params) => {
     console.log(params);
