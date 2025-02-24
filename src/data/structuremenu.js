@@ -26,17 +26,10 @@ export const Menus = [
                         urlpath: "/counseling"
                     },
                     {
-                        title: "Material Preparation",
-                        urlpath: "/material"
+                        title: "Session Notes",
+                        urlpath: "/session-notes/by-counseling"
                     },
-                    {
-                        title: "Session History",
-                        urlpath: "/counseling"
-                    },
-                    {
-                        title: "Violation Cases",
-                        urlpath: "/counseling"
-                    }
+
                 ]
             },
             {
@@ -47,14 +40,6 @@ export const Menus = [
                         title: "Nurse List",
                         urlpath: "/nurse-list"
                     },
-                    {
-                        title: "Level Approval",
-                        urlpath: "/"
-                    },
-                    {
-                        title: "Performance Tracker",
-                        urlpath: "/"
-                    }
                 ]
             },
         ]
@@ -83,12 +68,8 @@ export const Menus = [
                         urlpath: "/counseling"
                     },
                     {
-                        title: "Prepare Materials",
-                        urlpath: "/materials"
-                    },
-                    {
                         title: "Session Notes",
-                        urlpath: "/"
+                        urlpath: "/session-notes"
                     }
                 ]
             },
@@ -117,45 +98,15 @@ export const Menus = [
                 submenu: [
                     {
                         title: "Manage Users",
-                        urlpath: "/usermanage"
+                        urlpath: "/user-manage"
                     },
                     {
                         title: "Manage Nurses",
-                        urlpath: "/nursemanage"
+                        urlpath: "/nurse-manage"
                     },
                     {
                         title: "Manage Management",
-                        urlpath: "/managementmanage"
-                    }
-                ]
-            },
-            {
-                title: "References",
-                icon: <ListAlt className="w-5 h-5" />,
-                submenu: [
-                    {
-                        title: "Level Configuration",
-                        urlpath: "/levelrules"
-                    },
-                    {
-                        title: "Level Status",
-                        urlpath: "/levelstatus"
-                    },
-                    {
-                        title: "Counseling Types",
-                        urlpath: "/counselingtypes"
-                    },
-                    {
-                        title: "Counseling Status",
-                        urlpath: "/counselingstatus"
-                    },
-                    {
-                        title: "Material Categories",
-                        urlpath: "/materialcategories"
-                    },
-                    {
-                        title: "Department Categories",
-                        urlpath: "/departmentcategories"
+                        urlpath: "/management-manage"
                     }
                 ]
             },
@@ -165,11 +116,11 @@ export const Menus = [
                 submenu: [
                     {
                         title: "Audit Logs",
-                        urlpath: "/activityaudit"
+                        urlpath: "/activity-audit"
                     },
                     {
                         title: "System Configurations",
-                        urlpath: "/systemconfig"
+                        urlpath: "/system-config"
                     }
                 ]
             }

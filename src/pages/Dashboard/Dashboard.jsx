@@ -1,14 +1,26 @@
-import { Box, Typography } from "@mui/material"
-import react, { useEffect } from "react"
-import SideBar from "../layout/SideBar"
-import Header from "../layout/Header"
 
-export const Dashboard = () => {
+import useAuth from "../../hooks/useAuth";
+import NurseDashboard from "./NurseDashboard";
+import ManagementDashboard from "./ManagementDashboard";
 
-    return(
-        <Box>
-            <Header/>
-            <Typography>Dashboard</Typography>
-        </Box>
-    )
-}  
+// Role-based Dashboard component that shows the appropriate dashboard
+const Dashboard = () => {
+    const { auth } = useAuth();
+    const userRole = auth?.user?.role?.toLowerCase() || auth?.role?.toLowerCase() || '';
+    
+    // Show the appropriate dashboard based on user role
+    if (userRole === 'nurse') {
+      return <NurseDashboard />;
+    } else if (userRole === 'management' || userRole === 'admin') {
+      return <ManagementDashboard />;
+    }
+    
+    // Fallback for unknown roles
+    return (
+      <div>
+        Unknown role. Please contact system administrator.
+      </div>
+    );
+  };
+
+export default Dashboard;

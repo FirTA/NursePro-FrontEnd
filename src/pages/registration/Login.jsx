@@ -6,31 +6,24 @@ import {
   Typography,
   TextField,
   Button,
-  Link,
-  Grid,
   IconButton,
   InputAdornment,
   Paper,
   Alert,
   Snackbar,
-  Divider,
   CircularProgress,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import {
-  Visibility,
-  VisibilityOff,
-  Google as GoogleIcon,
-  GitHub as GitHubIcon,
-} from "@mui/icons-material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { API } from "../../api/post";
+import useAuth from "../../hooks/useAuth";
 
 // Custom styled components
 const LoginContainer = styled(Box)(({ theme }) => ({
   minHeight: "100vh",
   display: "flex",
   alignItems: "center",
-  background: `linear-gradient(45deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+  background: "linear-gradient(135deg, #6e45e1 0%, #88d3ce 100%)",
   padding: theme.spacing(2),
 }));
 
@@ -54,19 +47,9 @@ const StyledForm = styled("form")(({ theme }) => ({
   },
 }));
 
-const SocialButton = styled(Button)(({ theme }) => ({
-  marginBottom: theme.spacing(1),
-  padding: theme.spacing(1.5),
-  borderRadius: theme.spacing(1),
-  width: "100%",
-  justifyContent: "flex-start",
-  "& .MuiSvgIcon-root": {
-    marginRight: theme.spacing(1),
-  },
-}));
-
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { setAuth } = useAuth(); // Get setAuth from context
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -93,6 +76,18 @@ const LoginPage = () => {
         localStorage.setItem("refresh_token", refresh_token);
         localStorage.setItem("user_id", user_id);
         localStorage.setItem("role", role);
+
+        // Set auth context with user data
+        setAuth({
+          user_id,
+          role,
+          access_token,
+          refresh_token,
+          isAuthenticated: true,
+        });
+        if(role === 'Admin') {
+          return navigate("/user-manage")
+        }
         navigate("/dashboard");
       }
     } catch (err) {
@@ -100,6 +95,9 @@ const LoginPage = () => {
         err.response?.data?.detail || "Login failed. Please try again.";
       setError(errorMessage);
       setIsSnackbarOpen(true);
+      // Clear auth state on error
+      setAuth(null);
+      localStorage.clear();
     } finally {
       setIsLoading(false);
     }

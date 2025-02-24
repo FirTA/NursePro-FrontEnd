@@ -18,6 +18,11 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
+  Grid2,
+  Paper,
+  Divider,
+  Avatar,
+  InputAdornment,
 } from "@mui/material";
 import dayjs from "dayjs";
 import weekOfYear from "dayjs/plugin/weekOfYear";
@@ -36,12 +41,15 @@ import {
   AttachFile,
   Close as CloseIcon,
   Event,
+  Description,
+  Category,
 } from "@mui/icons-material";
 import { API } from "../../api/post";
 import { daysInWeek } from "date-fns/constants";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { Download, Trash2 } from "lucide-react";
+import { Download, File, FileIcon, SearchIcon, Trash2 } from "lucide-react";
+
 // Initialize dayjs plugins
 dayjs.extend(weekOfYear);
 dayjs.extend(customParseFormat);
@@ -50,10 +58,15 @@ dayjs.extend(isBetween);
 dayjs.extend(advancedFormat);
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
 dayjs.locale("id");
 
-const ConsultationForm = ({ open, onClose, counseling }) => {
+const CounselingForm = ({
+  open,
+  onClose,
+  counseling,
+  isNewCounseling,
+  userRole,
+}) => {
   const initialFormData = {
     title: "",
     description: "",
@@ -73,10 +86,17 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
   const [statuses, setStatuses] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [nurseSearchTerm, setNurseSearchTerm] = useState("");
+
+  // Get role from props or defaulting
+  const isAdmin =
+    userRole?.toLowerCase() === "admin" ||
+    userRole?.toLowerCase() === "management";
+  const isNurse = userRole?.toLowerCase() === "nurse";
 
   useEffect(() => {
-    console.log(counseling);
-  }, []);
+    console.log("CounselingForm opened with:", { open, counseling, userRole });
+  }, [open, counseling, userRole]);
 
   useEffect(() => {
     if (counseling) {
@@ -129,8 +149,6 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
       ...prev,
       nurse_ids: prev.nurse_ids.filter((id) => id !== nurseId),
     }));
-    console.log(selectedNurses);
-    console.log(formData);
   };
 
   // Get available nurses (not yet selected)
@@ -138,9 +156,18 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
     (nurse) => !selectedNurses.some((selected) => selected.id === nurse.id)
   );
 
+  const filteredNurses = availableNurses.filter(
+    (nurse) =>
+      nurse.name.toLowerCase().includes(nurseSearchTerm.toLowerCase()) ||
+      (nurse.level &&
+        nurse.level.toLowerCase().includes(nurseSearchTerm.toLowerCase()))
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    console.log("Submitting form data:", formData);
 
     try {
       setIsSubmitting(true);
@@ -153,10 +180,11 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
             .format("YYYY-MM-DDTHH:mm:ss")
         : dayjs.utc().tz("Asia/Jakarta").format("YYYY-MM-DDTHH:mm:ss");
 
-      // Important: Remove the forEach and append nurse_ids directly
+      // Add nurse_ids to form data
       formData.nurse_ids.forEach((nurseId) => {
         formDataToSend.append("nurse_ids", nurseId);
       });
+
       // Append other fields
       Object.keys(formData).forEach((key) => {
         if (key === "scheduled_date") {
@@ -165,8 +193,12 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
           formData.uploaded_files.forEach((file) => {
             formDataToSend.append("uploaded_files", file);
           });
-        } else if (key !== "nurse_ids") {
-          // Skip nurse_ids as we handled it above
+        } else if (
+          key !== "nurse_ids" &&
+          key !== "nurses" &&
+          key !== "materials_files"
+        ) {
+          // Skip nurse_ids as we handled it above, and skip arrays/objects that shouldn't be directly appended
           formDataToSend.append(key, formData[key]);
         }
       });
@@ -185,17 +217,15 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
           },
         });
       }
-      onClose(true);
+      onClose(true); // Pass true to indicate refresh needed
     } catch (error) {
       console.error("Error saving consultation:", error);
     } finally {
       setIsSubmitting(false);
-      setSelectedNurses([]);
-      setFormData(initialFormData);
     }
   };
 
-  // Rest of the handlers remain the same...
+  // File handling functions
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files || []);
     setFormData((prev) => ({
@@ -249,13 +279,231 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
     window.open(filePath, "_blank");
   };
 
+  // Special view for nurses viewing existing counseling sessions
+  if (isNurse && counseling) {
+    return (
+      <Dialog
+        open={open}
+        onClose={() => onClose()}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
+            py: 2,
+            px: 3,
+          }}
+        >
+          <Typography
+            variant="h5"
+            component="div"
+            sx={{ fontWeight: "medium" }}
+          >
+            {counseling?.title}
+          </Typography>
+          <Chip
+            label={counseling?.status_display}
+            color={
+              counseling?.status === 1
+                ? "success"
+                : counseling?.status === 2
+                ? "warning"
+                : "default"
+            }
+            size="small"
+            sx={{ mt: 1 }}
+          />
+        </DialogTitle>
+
+        <DialogContent sx={{ py: 3 }}>
+          <Grid2 container spacing={3}>
+            {/* Left column - Session details */}
+            <Grid2 item xs={12} md={7}>
+              <Paper variant="outlined" sx={{ p: 2, height: "100%" }}>
+                <Box sx={{ display: "flex", alignItems: "flex-start", mb: 3 }}>
+                  <Description sx={{ mr: 2, color: "text.secondary" }} />
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      sx={{ fontWeight: "medium", color: "text.primary" }}
+                    >
+                      Description
+                    </Typography>
+                    <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
+                      {counseling?.description || "No description provided"}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                  <Category sx={{ mr: 2, color: "text.secondary" }} />
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      sx={{ fontWeight: "medium", color: "text.primary" }}
+                    >
+                      Type
+                    </Typography>
+                    <Chip
+                      label={counseling?.counseling_type_display}
+                      variant="outlined"
+                      color="primary"
+                    />
+                  </Box>
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Event sx={{ mr: 2, color: "text.secondary" }} />
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      gutterBottom
+                      sx={{ fontWeight: "medium", color: "text.primary" }}
+                    >
+                      Scheduled Date
+                    </Typography>
+                    <Typography variant="body1">
+                      {counseling?.scheduled_date
+                        ? dayjs(counseling.scheduled_date).format(
+                            "DD MMMM YYYY HH:mm"
+                          )
+                        : "Not scheduled yet"}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Paper>
+            </Grid2>
+
+            {/* Right column - Materials */}
+            <Grid2 item xs={12} md={5}>
+              <Paper variant="outlined" sx={{ p: 2, height: "100%" }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                  <File sx={{ mr: 1, color: "text.secondary" }} />
+                  <Typography variant="h6" component="div">
+                    Materials
+                  </Typography>
+                </Box>
+
+                {counseling?.materials_files?.length > 0 ? (
+                  <List>
+                    {counseling.materials_files.map((file, index) => (
+                      <React.Fragment key={file.id || index}>
+                        <ListItem
+                          sx={{
+                            bgcolor: "background.paper",
+                            borderRadius: 1,
+                            transition: "all 0.2s",
+                            "&:hover": { bgcolor: "action.hover" },
+                          }}
+                        >
+                          <Avatar sx={{ mr: 2, bgcolor: "primary.light" }}>
+                            <FileIcon />
+                          </Avatar>
+                          <ListItemText
+                            primary={file.title}
+                            secondary={`Added on ${
+                              dayjs(file.created_at).format("DD MMM YYYY") ||
+                              "Unknown date"
+                            }`}
+                          />
+                          <ListItemSecondaryAction>
+                            <IconButton
+                              edge="end"
+                              onClick={() => handleDownload(file.file_path)}
+                              color="primary"
+                              sx={{
+                                "&:hover": {
+                                  bgcolor: "primary.light",
+                                  color: "primary.contrastText",
+                                },
+                              }}
+                            >
+                              <Download />
+                            </IconButton>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                        {index < counseling.materials_files.length - 1 && (
+                          <Divider component="li" sx={{ my: 1 }} />
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </List>
+                ) : (
+                  <Box
+                    sx={{
+                      py: 4,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "column",
+                      color: "text.secondary",
+                      bgcolor: "action.hover",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <FileIcon sx={{ fontSize: 40, mb: 1, opacity: 0.6 }} />
+                    <Typography>No materials available</Typography>
+                  </Box>
+                )}
+              </Paper>
+            </Grid2>
+          </Grid2>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2, bgcolor: "background.default" }}>
+          <Button onClick={() => onClose()} variant="outlined">
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={counseling?.status === 3} // Disable if counseling status is completed
+          >
+            Join Session
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
+
+  // Form view for admin/management users (or for creating new sessions)
   return (
-    <Dialog open={open} onClose={() => onClose()} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {counseling ? "Edit Consultation" : "New Consultation"}
+    <Dialog
+      open={open}
+      onClose={() => onClose()}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          bgcolor: "primary.main",
+          color: "white",
+          py: 2,
+        }}
+      >
+        {counseling ? "Edit Counseling Session" : "New Counseling Session"}
       </DialogTitle>
       <DialogContent>
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
+        <Box component="form" noValidate sx={{ mt: 2 }}>
           <TextField
             required
             fullWidth
@@ -296,10 +544,42 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
                   sx={{ m: 0.5 }}
                 />
               ))}
+              {selectedNurses.length === 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  No nurses selected
+                </Typography>
+              )}
             </Box>
           </Box>
 
-          {/* Nurse Selection Dropdown */}
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search nurses by name or level..."
+            value={nurseSearchTerm}
+            onChange={(e) => setNurseSearchTerm(e.target.value)}
+            margin="normal"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+              endAdornment: nurseSearchTerm ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setNurseSearchTerm("")}
+                    edge="end"
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
+            }}
+          />
+
+          {/* Nurse Selection Dropdown - Use filtered results */}
           <FormControl fullWidth margin="normal">
             <InputLabel>Add Nurse</InputLabel>
             <Select
@@ -307,18 +587,40 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
               onChange={(e) => handleNurseSelect(e.target.value)}
               displayEmpty
             >
-              {availableNurses.map((nurse) => (
-                <MenuItem key={nurse.id} value={nurse.id}>
-                  {nurse.name}
+              {filteredNurses.length === 0 ? (
+                <MenuItem disabled>
+                  {nurseSearchTerm
+                    ? "No matching nurses found"
+                    : "No more nurses available"}
                 </MenuItem>
-              ))}
-              {availableNurses.length === 0 && (
-                <MenuItem disabled>No more nurses available</MenuItem>
+              ) : (
+                filteredNurses.map((nurse) => (
+                  <MenuItem key={nurse.id} value={nurse.id}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        width: "100%",
+                      }}
+                    >
+                      <span>{nurse.name}</span>
+                      {nurse.level && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ ml: 2 }}
+                        >
+                          {nurse.level}
+                        </Typography>
+                      )}
+                    </Box>
+                  </MenuItem>
+                ))
               )}
             </Select>
           </FormControl>
 
-          {/* Rest of the form fields remain the same */}
+          {/* Counseling Type */}
           <FormControl fullWidth margin="normal" required>
             <InputLabel>Type</InputLabel>
             <Select
@@ -338,6 +640,7 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
             </Select>
           </FormControl>
 
+          {/* Status */}
           <FormControl fullWidth margin="normal" required>
             <InputLabel>Status</InputLabel>
             <Select
@@ -354,13 +657,16 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
             </Select>
           </FormControl>
 
+          {/* Date Picker */}
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="id">
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
               <DateTimePicker
                 label="Scheduled Date"
                 value={formData.scheduled_date}
                 onChange={handleDateChange}
-                renderInput={(params) => <TextField {...params} fullWidth />}
+                slotProps={{
+                  textField: { fullWidth: true, margin: "normal" },
+                }}
                 ampm={false}
                 format="DD MMMM YYYY HH:mm"
               />
@@ -373,6 +679,7 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
             </Box>
           </LocalizationProvider>
 
+          {/* Date Picker Dialog */}
           <Dialog
             open={datePickerOpen}
             onClose={() => setDatePickerOpen(false)}
@@ -420,6 +727,8 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
               </Button>
             </DialogActions>
           </Dialog>
+
+          {/* Materials Description */}
           <TextField
             fullWidth
             multiline
@@ -435,7 +744,7 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
             margin="normal"
           />
 
-          {/* Files section remains the same */}
+          {/* Files section */}
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle1">Materials</Typography>
             <Button
@@ -457,49 +766,30 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
               {/* Existing files */}
               {(formData.materials_files || []).map((file, index) => (
                 <ListItem
-                  key={`new-${index}`}
-                  className="border-b border-gray-200"
+                  key={`existing-${file.id}`}
+                  sx={{ borderBottom: "1px solid", borderColor: "divider" }}
                 >
                   <ListItemText
                     primary={file.title}
-                    secondary={file.size_readable}
-                    className="flex-1"
+                    secondary={file.size_readable || "Unknown size"}
                   />
-                  <ListItemSecondaryAction className="flex gap-1">
+                  <ListItemSecondaryAction>
                     {file.file_path && (
                       <IconButton
                         edge="end"
                         onClick={() => handleDownload(file.file_path)}
                         disabled={isSubmitting}
-                        className="text-blue-500 hover:text-blue-700"
+                        color="primary"
+                        sx={{ mr: 1 }}
                       >
-                        <Download className="h-5 w-5" />
+                        <Download />
                       </IconButton>
                     )}
                     <IconButton
                       edge="end"
                       onClick={() => removeFile(file.id, true)}
                       disabled={isSubmitting}
-                      className="text-gray-500 hover:text-red-500"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              ))}
-
-              {/* Newly uploaded files */}
-              {(formData.uploaded_files || []).map((file, index) => (
-                <ListItem key={`new-${index}`}>
-                  <ListItemText
-                    primary={file.name}
-                    secondary="Pending upload"
-                  />
-                  <ListItemSecondaryAction>
-                    <IconButton
-                      edge="end"
-                      onClick={() => removeFile(file.id, false)}
-                      disabled={isSubmitting}
+                      color="error"
                     >
                       <Delete />
                     </IconButton>
@@ -507,7 +797,30 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
                 </ListItem>
               ))}
 
-              {/* Show "No files uploaded" only when both arrays are empty */}
+              {/* Newly uploaded files */}
+              {(formData.uploaded_files || []).map((file, index) => (
+                <ListItem
+                  key={`new-${index}`}
+                  sx={{ borderBottom: "1px solid", borderColor: "divider" }}
+                >
+                  <ListItemText
+                    primary={file.name}
+                    secondary="Pending upload"
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      onClick={() => removeFile(index, false)}
+                      disabled={isSubmitting}
+                      color="error"
+                    >
+                      <Delete />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))}
+
+              {/* No files message */}
               {!(formData.materials_files || []).length &&
                 !(formData.uploaded_files || []).length && (
                   <ListItem>
@@ -518,8 +831,12 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
           </Box>
         </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={() => onClose()} disabled={isSubmitting}>
+      <DialogActions sx={{ px: 3, py: 2, bgcolor: "background.default" }}>
+        <Button
+          onClick={() => onClose()}
+          disabled={isSubmitting}
+          variant="outlined"
+        >
           Cancel
         </Button>
         <Button
@@ -535,4 +852,4 @@ const ConsultationForm = ({ open, onClose, counseling }) => {
   );
 };
 
-export default ConsultationForm;
+export default CounselingForm;

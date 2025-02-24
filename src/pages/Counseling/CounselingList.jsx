@@ -26,12 +26,15 @@ import { id } from "date-fns/locale";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import { Download } from "lucide-react";
+import useAuth from "../../hooks/useAuth";
 // Extend dayjs with plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.locale("id");
 
-const CounselingList = ({ onEdit, onView, refreshTrigger }) => {
+const CounselingList = ({ onEdit, onView, refreshTrigger, userRole }) => {
+  const { auth } = useAuth();
   const [counseling, setCounseling] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,6 +43,11 @@ const CounselingList = ({ onEdit, onView, refreshTrigger }) => {
   const [order, setOrder] = useState("asc");
   const [anchorEl, setAnchorEl] = useState(null);
   const [hoveredData, setHoveredData] = useState(null);
+
+  const isAdmin =
+    userRole.toLowerCase() === "admin" ||
+    userRole.toLowerCase() === "management";
+  const isNurse = userRole.toLowerCase() === "nurse";
 
   useEffect(() => {
     fetchConsultations();
@@ -162,34 +170,21 @@ const CounselingList = ({ onEdit, onView, refreshTrigger }) => {
       );
     }
 
-    if (error) {
-      return (
-        <TableRow>
-          <TableCell
-            colSpan={7}
-            align="center"
-            sx={{ py: 3, color: "error.main" }}
-          >
-            {error}
-          </TableCell>
-        </TableRow>
-      );
-    }
-
     const filteredData = filterData(counseling);
     const sortedData = sortData(filteredData);
 
-    if (sortedData.length === 0) {
-      return (
-        <TableRow>
-          <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-            No consultations found
-          </TableCell>
-        </TableRow>
-      );
-    }
+    // For nurses, only show counseling sessions they're part of
+    const userSpecificData = isNurse
+      ? sortedData.filter((session) =>
+          session.nurses.some((nurse) => nurse.id === auth.nurse_id)
+        )
+      : sortedData;
 
-    return sortedData.map((counseling) => (
+    const handleDownload = (filePath) => {
+      window.open(filePath, "_blank");
+    };
+
+    return userSpecificData.map((counseling) => (
       <TableRow key={counseling.id}>
         <TableCell>{counseling.title}</TableCell>
         <TableCell>
@@ -218,12 +213,19 @@ const CounselingList = ({ onEdit, onView, refreshTrigger }) => {
           <IconButton onClick={() => onView(counseling)}>
             <Visibility />
           </IconButton>
-          <IconButton onClick={() => onEdit(counseling)}>
-            <Edit />
-          </IconButton>
-          <IconButton color="error" onClick={() => handleDelete(counseling)}>
-            <Delete />
-          </IconButton>
+          {isAdmin && (
+            <>
+              <IconButton onClick={() => onEdit(counseling)}>
+                <Edit />
+              </IconButton>
+              <IconButton
+                color="error"
+                onClick={() => handleDelete(counseling)}
+              >
+                <Delete />
+              </IconButton>
+            </>
+          )}
         </TableCell>
       </TableRow>
     ));
@@ -237,25 +239,29 @@ const CounselingList = ({ onEdit, onView, refreshTrigger }) => {
         justifyContent="space-between"
         alignItems="center"
       >
-        <Typography variant="h6">Consultations</Typography>
+        <Typography variant="h6">
+          {isNurse ? "My Counseling Sessions" : "Counseling Sessions"}
+        </Typography>
         <Box display="flex" gap={2}>
           <TextField
             size="small"
-            placeholder="Search consultations..."
+            placeholder="Search counseling sessions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
               startAdornment: <Search sx={{ color: "action.active", mr: 1 }} />,
             }}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => onEdit()}
-            disabled={loading}
-          >
-            Add New Consultation
-          </Button>
+          {isAdmin && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => onEdit()}
+              disabled={loading}
+            >
+              Add New Counseling Session
+            </Button>
+          )}
         </Box>
       </Box>
       <TableContainer sx={{ maxHeight: 440 }}>

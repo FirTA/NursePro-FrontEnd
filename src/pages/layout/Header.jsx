@@ -22,6 +22,7 @@ import {
 import { styled } from "@mui/material/styles";
 import { API } from "../../api/post";
 import { useNavigate } from "react-router-dom";
+import useAuth from "../../hooks/useAuth";
 
 // Custom styled components
 const UserChip = styled(Chip)(({ theme }) => ({
@@ -51,6 +52,7 @@ const StyledMenu = styled(Menu)(({ theme }) => ({
 }));
 
 export default function Header({ onToggleSidebar, isSidebarOpen }) {
+  const {setAuth} = useAuth()
   const [anchorEl, setAnchorEl] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -65,6 +67,11 @@ export default function Header({ onToggleSidebar, isSidebarOpen }) {
   const fetchUserData = async () => {
     try {
       const response = await API.get("/api/user/profile");
+      setAuth(prevAuth => ({
+        ...prevAuth,
+        nurse_id : response.data.nurse?.id || "",
+        management_id : response.data.management?.id || ""
+      }))
       setUserData(response.data);
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -92,6 +99,10 @@ export default function Header({ onToggleSidebar, isSidebarOpen }) {
 
   const getUserTitle = () => {
     if (!userData) return "";
+
+    if (userData.role?.name === "Admin") {
+      return "Admin";
+    }
 
     if (userData.role?.name === "Nurse") {
       return `Nurse - ${userData.nurse?.level || "Nurse"}`;
