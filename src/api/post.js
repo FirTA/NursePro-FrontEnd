@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const APIWithoutHeader = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/",
+  baseURL: "https://nurse-pro-back-end.vercel.app/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -9,7 +9,7 @@ export const APIWithoutHeader = axios.create({
 
 
 export const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/",
+  baseURL: "https://nurse-pro-back-end.vercel.app/api",
   headers: {
     "Content-Type": "application/json",
   },
