@@ -20,6 +20,9 @@ import NurseList from "./pages/Nurse/NurseList";
 import SessionNotesPage from "./pages/Notes/SessionNotesPage";
 import RequireRole from "./pages/components/RequireRole";
 import CounselingNotesManagementView from "./pages/Notes/CounselingNotesManagementView";
+import AdminUsersPage from "./pages/manage/AdminUsersPage";
+import LoginHistoryPage from "./pages/manage/LoginHistoryPage";
+import LevelReferencePage from "./pages/level/LevelReferencesPage";
 
 function App() {
   return (
@@ -37,6 +40,10 @@ function App() {
           <Route path="/counseling" element={<Counseling />} />
           <Route path="/nurse-list" element={<NurseList />} />
           <Route path="/material" element={<Material />} />
+          <Route path="/user-manage" element={<AdminUsersPage />} />
+          <Route path="/login-history" element={<LoginHistoryPage/>}/>
+          <Route path="/levels" element={<LevelReferencePage/>}/>
+
           {/* Session Notes Routes */}
           <Route path="/session-notes">
             {/* For nurses - individual notes */}

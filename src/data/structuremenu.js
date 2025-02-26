@@ -79,12 +79,12 @@ export const Menus = [
                 submenu: [
                     {
                         title: "Current Level",
-                        urlpath: "/career path"
+                        urlpath: "/career-path"
                     },
-                    {
-                        title: "Progress Tracker",
-                        urlpath: "/"
-                    }
+                    // {
+                    //     title: "Progress Tracker",
+                    //     urlpath: "/"
+                    // }
                 ]
             }
         ]
@@ -100,14 +100,6 @@ export const Menus = [
                         title: "Manage Users",
                         urlpath: "/user-manage"
                     },
-                    {
-                        title: "Manage Nurses",
-                        urlpath: "/nurse-manage"
-                    },
-                    {
-                        title: "Manage Management",
-                        urlpath: "/management-manage"
-                    }
                 ]
             },
             {
@@ -115,13 +107,13 @@ export const Menus = [
                 icon: <Settings className="w-5 h-5" />,
                 submenu: [
                     {
-                        title: "Audit Logs",
-                        urlpath: "/activity-audit"
+                        title: "Level Settings",
+                        urlpath: "/levels"
                     },
-                    {
-                        title: "System Configurations",
-                        urlpath: "/system-config"
-                    }
+                    // {
+                    //     title: "System Configurations",
+                    //     urlpath: "/system-config"
+                    // }
                 ]
             }
         ]

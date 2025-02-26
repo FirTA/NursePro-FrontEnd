@@ -23,12 +23,16 @@ import {
   FormControlLabel,
   Switch,
   DialogActions,
+  LinearProgress,
+  Tooltip,
 } from "@mui/material";
 import {
   Edit as EditIcon,
   Visibility as VisibilityIcon,
   FilterList as FilterListIcon,
   Close,
+  CalendarMonth,
+  AccessTime,
 } from "@mui/icons-material";
 import { API } from "../../api/post";
 import { EyeClosedIcon, SaveIcon } from "lucide-react";
@@ -96,8 +100,6 @@ const NurseList = () => {
     setPage(0);
   };
 
-  // Fetch functions remain the same...
-
   const handleView = (nurse) => {
     setSelectedNurse(nurse);
     setViewDialog(true);
@@ -112,7 +114,7 @@ const NurseList = () => {
   const handleSave = async () => {
     try {
       const response = await API.patch(
-        `/api/nurses/${editFormData.id}/`,
+        `/nurses/${editFormData.id}/`,
         editFormData
       );
 
@@ -124,6 +126,8 @@ const NurseList = () => {
           )
         );
         setEditDialog(false);
+        // Refresh the data
+        fetchNurses();
       }
     } catch (error) {
       console.error("Error updating nurse:", error);
@@ -138,13 +142,24 @@ const NurseList = () => {
     }));
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getProgressColor = (progress) => {
+    if (progress < 30) return "error";
+    if (progress < 70) return "warning";
+    return "success";
+  };
+
   const filteredNurses = nurses.filter((nurse) => {
     const matchesSearch =
-      nurse.name.toLowerCase().includes(search.toLowerCase()) ||
-      nurse.nurse_account_id.toLowerCase().includes(search.toLowerCase());
+      nurse.name?.toLowerCase().includes(search.toLowerCase()) ||
+      nurse.nurse_account_id?.toLowerCase().includes(search.toLowerCase());
     const matchesDepartment =
-      department === "" || nurse.department.id === department;
-    const matchesLevel = level === "" || nurse.current_level.id === level;
+      department === "" || nurse.department?.id === department;
+    const matchesLevel = level === "" || nurse.current_level?.id === level;
     return matchesSearch && matchesDepartment && matchesLevel;
   });
 
@@ -220,8 +235,60 @@ const NurseList = () => {
               Next Level Date
             </Typography>
             <Typography variant="body1">
-              {new Date(selectedNurse?.level_upgrade_date).toLocaleDateString()}
+              {formatDate(selectedNurse?.level_upgrade_date)}
             </Typography>
+          </Grid2>
+
+          {/* Added Level Progress Details */}
+          <Grid2 item xs={12}>
+            <Box sx={{ mt: 2, mb: 1 }}>
+              <Typography
+                variant="subtitle2"
+                color="textSecondary"
+                gutterBottom
+              >
+                Level Progress
+              </Typography>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Box sx={{ flexGrow: 1 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={selectedNurse?.level_progress || 0}
+                    color={getProgressColor(selectedNurse?.level_progress || 0)}
+                    sx={{ height: 10, borderRadius: 5 }}
+                  />
+                </Box>
+                <Typography variant="body2" fontWeight="bold">
+                  {selectedNurse?.level_progress || 0}%
+                </Typography>
+              </Box>
+
+              <Box display="flex" justifyContent="space-between" mt={1}>
+                <Box display="flex" alignItems="center">
+                  <CalendarMonth
+                    fontSize="small"
+                    color="action"
+                    sx={{ mr: 0.5 }}
+                  />
+                  <Typography variant="caption">
+                    Started:{" "}
+                    {formatDate(selectedNurse?.current_level_start_date)}
+                  </Typography>
+                </Box>
+                <Box display="flex" alignItems="center">
+                  <AccessTime
+                    fontSize="small"
+                    color="action"
+                    sx={{ mr: 0.5 }}
+                  />
+                  <Typography variant="caption">
+                    {selectedNurse?.current_level?.required_time_in_month
+                      ? `${selectedNurse.current_level.required_time_in_month} months required`
+                      : "Time requirement unknown"}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
           </Grid2>
         </Grid2>
       </DialogContent>
@@ -229,154 +296,165 @@ const NurseList = () => {
   );
 
   // Edit Dialog Component
-  // EditDialog Component with better spacing
-const EditDialog = () => (
-  <Dialog
-    open={editDialog}
-    onClose={() => setEditDialog(false)}
-    maxWidth="md"
-    fullWidth
-  >
-    <DialogTitle>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h6">Edit Nurse</Typography>
-        <IconButton onClick={() => setEditDialog(false)}>
-          <Close />
-        </IconButton>
-      </Box>
-    </DialogTitle>
-    <DialogContent>
-      <Box sx={{ p: 2 }}> {/* Added padding around the content */}
-        <Grid2 container spacing={3}> {/* Increased grid spacing */}
-          <Grid2 item xs={12}>
-            <TextField
-              fullWidth
-              label="Nurse ID"
-              name="nurse_account_id"
-              value={editFormData?.nurse_account_id || ''}
-              onChange={handleChange}
-              sx={{ mb: 2 }}
-            />
-          </Grid2>
-          
-          <Grid2 item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="First Name"
-              name="first_name"
-              value={editFormData?.user?.first_name || ''}
-              onChange={handleChange}
-              disabled // Since it's from User model
-            />
-          </Grid2>
-          
-          <Grid2 item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Last Name"
-              name="last_name"
-              value={editFormData?.user?.last_name || ''}
-              onChange={handleChange}
-              disabled // Since it's from User model
-            />
-          </Grid2>
+  const EditDialog = () => (
+    <Dialog
+      open={editDialog}
+      onClose={() => setEditDialog(false)}
+      maxWidth="md"
+      fullWidth
+    >
+      <DialogTitle>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">Edit Nurse</Typography>
+          <IconButton onClick={() => setEditDialog(false)}>
+            <Close />
+          </IconButton>
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        <Box sx={{ p: 2 }}>
+          <Grid2 container spacing={3}>
+            <Grid2 item xs={12}>
+              <TextField
+                fullWidth
+                label="Nurse ID"
+                name="nurse_account_id"
+                value={editFormData?.nurse_account_id || ""}
+                onChange={handleChange}
+                sx={{ mb: 2 }}
+              />
+            </Grid2>
 
-          <Grid2 item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              select
-              label="Department"
-              name="department"
-              value={editFormData?.department?.id || ''}
-              onChange={handleChange}
-            >
-              {departments.map((dept) => (
-                <MenuItem key={dept.id} value={dept.id}>
-                  {dept.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid2>
+            <Grid2 item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="First Name"
+                name="first_name"
+                value={editFormData?.name || ""}
+                onChange={handleChange}
+                disabled
+              />
+            </Grid2>
 
-          <Grid2 item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              select
-              label="Level"
-              name="current_level"
-              value={editFormData?.level || ''}
-              onChange={handleChange}
-            >
-              {levels.map((level) => (
-                <MenuItem key={level.id} value={level.id}>
-                  {level.level}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid2>
+            <Grid2 item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                select
+                label="Department"
+                name="department"
+                value={editFormData?.department?.id || ""}
+                onChange={handleChange}
+              >
+                {departments.map((dept) => (
+                  <MenuItem key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid2>
 
-          <Grid2 item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Specialization"
-              name="specialization"
-              value={editFormData?.specialization || ''}
-              onChange={handleChange}
-            />
-          </Grid2>
+            <Grid2 item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                select
+                label="Level"
+                name="current_level"
+                value={editFormData?.level || ""}
+                onChange={handleChange}
+              >
+                {levels.map((level) => (
+                  <MenuItem key={level.id} value={level.id}>
+                    {level.level}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid2>
 
-          <Grid2 item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Years of Service"
-              value={editFormData?.years_of_service || ''}
-              disabled
-            />
-          </Grid2>
+            <Grid2 item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Specialization"
+                name="specialization"
+                value={editFormData?.specialization || ""}
+                onChange={handleChange}
+              />
+            </Grid2>
 
-          <Grid2 item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Next Level Date"
-              value={editFormData?.level_upgrade_date ? 
-                new Date(editFormData.level_upgrade_date).toLocaleDateString() : ''}
-              disabled
-            />
-          </Grid2>
+            <Grid2 item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Years of Service"
+                value={editFormData?.years_of_service || ""}
+                disabled
+              />
+            </Grid2>
 
-          <Grid2 item xs={12}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={editFormData?.is_active || false}
-                  onChange={handleChange}
-                  name="is_active"
-                />
-              }
-              label="Active Status"
-            />
+            <Grid2 item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Next Level Date"
+                value={formatDate(editFormData?.level_upgrade_date)}
+                disabled
+              />
+            </Grid2>
+
+            <Grid2 item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={editFormData?.is_active || false}
+                    onChange={handleChange}
+                    name="is_active"
+                  />
+                }
+                label="Active Status"
+              />
+            </Grid2>
+
+            {/* Level Progress (read-only view) */}
+            <Grid2 item xs={12}>
+              <Typography
+                variant="subtitle2"
+                color="textSecondary"
+                gutterBottom
+              >
+                Level Progress
+              </Typography>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Box sx={{ flexGrow: 1 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={editFormData?.level_progress || 0}
+                    color={getProgressColor(editFormData?.level_progress || 0)}
+                    sx={{ height: 10, borderRadius: 5 }}
+                  />
+                </Box>
+                <Typography variant="body2" fontWeight="bold">
+                  {editFormData?.level_progress || 0}%
+                </Typography>
+              </Box>
+            </Grid2>
           </Grid2>
-        </Grid2>
-      </Box>
-    </DialogContent>
-    <DialogActions sx={{ p: 3 }}> {/* Added more padding to actions */}
-      <Button 
-        onClick={() => setEditDialog(false)}
-        variant="outlined"
-        sx={{ mr: 1 }}
-      >
-        Cancel
-      </Button>
-      <Button 
-        onClick={handleSave} 
-        variant="contained" 
-        startIcon={<SaveIcon />}
-      >
-        Save Changes
-      </Button>
-    </DialogActions>
-  </Dialog>
-);
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ p: 3 }}>
+        <Button
+          onClick={() => setEditDialog(false)}
+          variant="outlined"
+          sx={{ mr: 1 }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSave}
+          variant="contained"
+          startIcon={<SaveIcon />}
+        >
+          Save Changes
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 
   return (
     <Box sx={{ width: "100%", p: 3 }}>
@@ -436,6 +514,7 @@ const EditDialog = () => (
                 <TableCell>Department</TableCell>
                 <TableCell>Level</TableCell>
                 <TableCell>Years of Service</TableCell>
+                <TableCell>Level Progress</TableCell>
                 <TableCell>Next Level Date</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Actions</TableCell>
@@ -448,11 +527,40 @@ const EditDialog = () => (
                   <TableRow key={nurse.id}>
                     <TableCell>{nurse.nurse_account_id}</TableCell>
                     <TableCell>{nurse.name}</TableCell>
-                    <TableCell>{nurse.department.name}</TableCell>
+                    <TableCell>{nurse.department?.name}</TableCell>
                     <TableCell>{nurse.level}</TableCell>
                     <TableCell>{nurse.years_of_service}</TableCell>
+                    <TableCell sx={{ minWidth: 150 }}>
+                      <Tooltip
+                        title={`Started: ${formatDate(
+                          nurse.current_level_start_date
+                        )}`}
+                        arrow
+                      >
+                        <Box>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Box sx={{ flexGrow: 1, width: "100%" }}>
+                              <LinearProgress
+                                variant="determinate"
+                                value={nurse.level_progress || 0}
+                                color={getProgressColor(
+                                  nurse.level_progress || 0
+                                )}
+                                sx={{ height: 8, borderRadius: 4 }}
+                              />
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              sx={{ whiteSpace: "nowrap" }}
+                            >
+                              {nurse.level_progress || 0}%
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Tooltip>
+                    </TableCell>
                     <TableCell>
-                      {new Date(nurse.level_upgrade_date).toLocaleDateString()}
+                      {formatDate(nurse.level_upgrade_date)}
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -465,12 +573,14 @@ const EditDialog = () => (
                       <IconButton
                         size="small"
                         onClick={() => handleView(nurse)}
+                        title="View Details"
                       >
                         <VisibilityIcon />
                       </IconButton>
                       <IconButton
                         size="small"
                         onClick={() => handleEdit(nurse)}
+                        title="Edit Nurse"
                       >
                         <EditIcon />
                       </IconButton>
