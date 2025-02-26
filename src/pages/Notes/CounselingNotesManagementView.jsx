@@ -71,7 +71,7 @@ const CounselingNotesManagementView = () => {
       }
       
       const response = await API.get(`/counseling-results/by-counseling/${query}`);
-      setCounselingSessions(response.data || []);
+      setCounselingSessions(response.data.results || []);
     } catch (error) {
       console.error('Error fetching counseling sessions with notes:', error);
     } finally {

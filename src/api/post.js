@@ -1,18 +1,18 @@
 import axios from "axios";
 
 export const APIWithoutHeader = axios.create({
-  baseURL: "https://nurse-pro-back-end.vercel.app/api",
-  headers: {
+  baseURL: 'https://nurse-pro-back-end.vercel.app/api',  headers: {
     "Content-Type": "application/json",
   },
+  timeout: parseInt(process.env.REACT_APP_API_TIMEOUT || "30000"),
 });
 
 
 export const API = axios.create({
-  baseURL: "https://nurse-pro-back-end.vercel.app/api",
-  headers: {
+  baseURL: 'https://nurse-pro-back-end.vercel.app/api',  headers: {
     "Content-Type": "application/json",
   },
+  timeout: parseInt(process.env.REACT_APP_API_TIMEOUT || "30000"),
 });
 
 // Interceptor to set Authorization dynamically before each request

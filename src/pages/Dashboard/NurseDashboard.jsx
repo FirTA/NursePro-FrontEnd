@@ -405,7 +405,7 @@ const NurseDashboard = () => {
                         }
                       />
                       <ListItemSecondaryAction>
-                        <Tooltip title="Create Session Notes">
+                        {/* <Tooltip title="Create Session Notes">
                           <IconButton 
                             edge="end" 
                             color="warning"
@@ -413,7 +413,7 @@ const NurseDashboard = () => {
                           >
                             <NoteAddIcon />
                           </IconButton>
-                        </Tooltip>
+                        </Tooltip> */}
                       </ListItemSecondaryAction>
                     </ListItem>
                   ))}

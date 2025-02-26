@@ -29,9 +29,10 @@ function App() {
     <ThemeProvider theme={theme}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<NotFoundPage />} />{" "}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route element={<Layout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/careerpath" element={<CareerPath />} />
@@ -40,9 +41,8 @@ function App() {
           <Route path="/nurse-list" element={<NurseList />} />
           <Route path="/material" element={<Material />} />
           <Route path="/user-manage" element={<AdminUsersPage />} />
-          <Route path="/login-history" element={<LoginHistoryPage/>}/>
-          <Route path="/levels" element={<LevelReferencePage/>}/>
-
+          <Route path="/login-history" element={<LoginHistoryPage />} />
+          <Route path="/levels" element={<LevelReferencePage />} />
           {/* Session Notes Routes */}
           <Route path="/session-notes">
             {/* For nurses - individual notes */}
@@ -65,7 +65,6 @@ function App() {
               }
             />
           </Route>{" "}
-          <Route path="*" element={<NotFoundPage />} />{" "}
           {/* Catch-all for invalid routes */}
         </Route>
       </Routes>
