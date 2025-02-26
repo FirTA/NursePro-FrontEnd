@@ -73,20 +73,20 @@ export const Menus = [
                     }
                 ]
             },
-            {
-                title: "Career Path",
-                icon: <BarChart className="w-5 h-5" />,
-                submenu: [
-                    {
-                        title: "Current Level",
-                        urlpath: "/career-path"
-                    },
-                    // {
-                    //     title: "Progress Tracker",
-                    //     urlpath: "/"
-                    // }
-                ]
-            }
+            // {
+            //     title: "Career Path",
+            //     icon: <BarChart className="w-5 h-5" />,
+            //     submenu: [
+            //         {
+            //             title: "Current Level",
+            //             urlpath: "/career-path"
+            //         },
+            //         // {
+            //         //     title: "Progress Tracker",
+            //         //     urlpath: "/"
+            //         // }
+            //     ]
+            // }
         ]
     },
     {
